@@ -19,3 +19,7 @@ include(GoogleTest)
 add_executable(ftp_test test.cpp)
 target_link_libraries(ftp_test GTest::gtest_main)
 gtest_discover_tests(ftp_test)
+
+add_executable(additional_test additional_test.cpp)
+target_link_libraries(additional_test GTest::gtest_main)
+gtest_discover_tests(additional_test)
