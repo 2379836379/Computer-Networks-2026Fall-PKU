@@ -14,8 +14,7 @@
 #define RESULT SOURCE_DIR "/build/recvfile"
 
 static int port = 49152;
-static char origin[100];
-static char result[100];
+static bool created = false;
 
 int main(int argc, char** argv) {
     testing::InitGoogleTest(&argc, argv);
@@ -105,6 +104,7 @@ int run_tests(const char* window_size, const char* err, const char* prob,
     pid_t sender, receiver;
 
     port++;
+    system("rm -f " RESULT);
 
     exe_name(sender_name, 200, true, issn);
     exe_name(receiver_name, 200, false, !issn);
@@ -112,12 +112,12 @@ int run_tests(const char* window_size, const char* err, const char* prob,
 
     if ((receiver = fork()) == 0) {
         if (issn) {
-            if (execl(receiver_name, receiver_name, port_s, result, window_size,
+            if (execl(receiver_name, receiver_name, port_s, RESULT, window_size,
                       mode, err, prob, nullptr) == -1) {
                 LOG_FATAL("Failed to execute the receiver\n");
             }
         } else {
-            if (execl(receiver_name, receiver_name, port_s, result, window_size,
+            if (execl(receiver_name, receiver_name, port_s, RESULT, window_size,
                       mode, nullptr) == -1) {
                 LOG_FATAL("Failed to execute the receiver\n");
             }
@@ -125,12 +125,12 @@ int run_tests(const char* window_size, const char* err, const char* prob,
     }
     if ((sender = fork()) == 0) {
         if (issn) {
-            if (execl(sender_name, sender_name, "127.0.0.1", port_s, origin,
+            if (execl(sender_name, sender_name, "127.0.0.1", port_s, ORIGIN,
                       window_size, mode, nullptr) == -1) {
                 LOG_FATAL("Failed to execute the sender\n");
             }
         } else {
-            if (execl(sender_name, sender_name, "127.0.0.1", port_s, origin,
+            if (execl(sender_name, sender_name, "127.0.0.1", port_s, ORIGIN,
                       window_size, mode, err, prob, nullptr) == -1) {
                 LOG_FATAL("Failed to execute the sender\n");
             }
@@ -140,27 +140,19 @@ int run_tests(const char* window_size, const char* err, const char* prob,
     if (wait_or_timeout(sender, receiver) == -1) {
         return -1;
     }
-    return diff_file(origin, result);
-}
-
-void create_random(int megabytes) {
-    char cmd[200];
-    std::snprintf(cmd, 200, "head -c %d < /dev/urandom > %s",
-                  megabytes * 1024 * 1024, origin);
-    system(cmd);
+    return diff_file(ORIGIN, RESULT);
 }
 
 /* -------------------------- before & after tests -------------------------- */
 class RTP : public ::testing::Test {
     void SetUp() override {
-        std::snprintf(origin, 100, "%s%d", ORIGIN, rand() % 12345 + 123);
-        std::snprintf(result, 100, "%s%d", RESULT, rand() % 12345 + 123);
-        create_random(2);
-    }
-
-    void TearDown() override {
-        std::remove(origin);
-        std::remove(result);
+        if (!created) {
+            char cmd[200];
+            std::snprintf(cmd, 200, "head -c %d < /dev/urandom > " ORIGIN,
+                          2 * 1024 * 1024);
+            system(cmd);
+            created = true;
+        }
     }
 };
 
