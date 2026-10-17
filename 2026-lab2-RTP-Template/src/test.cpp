@@ -89,7 +89,7 @@ int wait_or_timeout(pid_t sender, pid_t receiver) {
 
 void exe_name(char* name, size_t maxlen, bool is_sender, bool normal) {
     const char* prefix =
-        normal ? SOURCE_DIR "/build/" : SOURCE_DIR "/test/test_";
+        normal ? SOURCE_DIR "/build/" : SOURCE_DIR "/test/bin/test_";
     const char* body = is_sender ? "sender" : "receiver";
 
     std::snprintf(name, maxlen, "%s%s", prefix, body);
